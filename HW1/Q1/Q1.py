@@ -201,15 +201,14 @@ def return_name()->str:
 # Some boilerplate/sample code is provided for demonstration. We will not call __main__ during grading.
 
 class Graph:
-
     # Do not modify
     def __init__(self, with_nodes_file=None, with_edges_file=None):
         """
-        option 1:  init as an empty graph and add nodes
-        option 2: init by specifying a path to nodes & edges files
+        Initialize a Graph object.
         """
         self.nodes = []
         self.edges = []
+
         if with_nodes_file and with_edges_file:
             nodes_CSV = csv.reader(open(with_nodes_file))
             nodes_CSV = list(nodes_CSV)[1:]
@@ -219,54 +218,36 @@ class Graph:
             edges_CSV = list(edges_CSV)[1:]
             self.edges = [(e[0], e[1]) for e in edges_CSV]
 
-
     def add_node(self, id: str, name: str) -> None:
         """
-        add a tuple (id, name) representing a node to self.nodes if it does not already exist
-        The graph should not contain any duplicate nodes
+        Add a node to the graph if it does not already exist.
         """
-        # return NotImplemented
-        if (id, name) not in self.nodes:
+        if not any(node[0] == id for node in self.nodes):
             self.nodes.append((id, name))
-
 
     def add_edge(self, source: str, target: str) -> None:
         """
         Add an edge between two nodes if it does not already exist.
-        An edge is represented by a tuple containing two strings: e.g.: ('source', 'target').
-        Where 'source' is the id of the source node and 'target' is the id of the target node
-        e.g., for two nodes with ids 'a' and 'b' respectively, add the tuple ('a', 'b') to self.edges
         """
-        # return NotImplemented
-        if (source, target) not in self.edges and (target, source) not in self.edges:
+        if source != target and (source, target) not in self.edges and (target, source) not in self.edges:
             self.edges.append((source, target))
-
 
     def total_nodes(self) -> int:
         """
-        Returns an integer value for the total number of nodes in the graph
+        Return the total number of nodes in the graph.
         """
-        # return NotImplemented
         return len(self.nodes)
-
 
     def total_edges(self) -> int:
         """
-        Returns an integer value for the total number of edges in the graph
+        Return the total number of edges in the graph.
         """
-        # return NotImplemented
         return len(self.edges)
-
 
     def max_degree_nodes(self) -> dict:
         """
-        Return the node(s) with the highest degree
-        Return multiple nodes in the event of a tie
-        Format is a dict where the key is the node_id and the value is an integer for the node degree
-        e.g. {'a': 8}
-        or {'a': 22, 'b': 22}
+        Return the node(s) with the highest degree.
         """
-        # return NotImplemented
         degree_count = {node[0]: 0 for node in self.nodes}
         for edge in self.edges:
             degree_count[edge[0]] += 1
@@ -275,85 +256,132 @@ class Graph:
         max_degree = max(degree_count.values())
         return {node: degree for node, degree in degree_count.items() if degree == max_degree}
 
-
     def print_nodes(self):
         """
-        No further implementation required
-        May be used for de-bugging if necessary
+        Print all nodes. Used for debugging.
         """
         print(self.nodes)
 
-
     def print_edges(self):
         """
-        No further implementation required
-        May be used for de-bugging if necessary
+        Print all edges. Used for debugging.
         """
         print(self.edges)
-
 
     # Do not modify
     def write_edges_file(self, path="edges.csv")->None:
         """
-        write all edges out as .csv
-        :param path: string
-        :return: None
+        Write all edges out as .csv.
         """
-        edges_path = path
-        edges_file = open(edges_path, 'w', encoding='utf-8')
-
-        edges_file.write("source" + "," + "target" + "\n")
-
-        for e in self.edges:
-            edges_file.write(e[0] + "," + e[1] + "\n")
-
-        edges_file.close()
-        print("finished writing edges to csv")
-
+        with open(path, 'w', encoding='utf-8') as edges_file:
+            edges_file.write("source,target\n")
+            for e in self.edges:
+                edges_file.write(f"{e[0]},{e[1]}\n")
 
     # Do not modify
     def write_nodes_file(self, path="nodes.csv")->None:
         """
-        write all nodes out as .csv
-        :param path: string
-        :return: None
+        Write all nodes out as .csv.
         """
-        nodes_path = path
-        nodes_file = open(nodes_path, 'w', encoding='utf-8')
+        with open(path, 'w', encoding='utf-8') as nodes_file:
+            nodes_file.write("id,name\n")
+            for n in self.nodes:
+                nodes_file.write(f"{n[0]},{n[1]}\n")
 
-        nodes_file.write("id,name" + "\n")
-        for n in self.nodes:
-            nodes_file.write(n[0] + "," + n[1] + "\n")
-        nodes_file.close()
-        print("finished writing nodes to csv")
+# comment the original section out:
+"""
+if __name__ == "__main__":
 
+    person_id = '2975'
+    person_name = 'Laurence Fishburne'
+    vote_avg_threshold = 8.0
+    credit_limit = 2
+    graph = Graph()
+    graph.add_node(person_id, person_name)
+    tmdb_api_utils = TMDBAPIUtils(api_key='14386f6d2560c16967a0141156e72327')
+    movie_credits = tmdb_api_utils.get_movie_credits_for_person(person_id, vote_avg_threshold)
 
+    # Print movie credits
+    print(f"Movie Credits for Person ID {person_id} (Laurence Fishburne):")
+    for credit in movie_credits:
+        print(credit)
+    print("\n")  # Add a newline for better separation
+
+    # Building the graph
+    new_nodes = set()
+    for movie in movie_credits:
+        movie_id = movie['id']
+        cast_data = tmdb_api_utils.get_movie_cast(str(movie_id), credit_limit)
+
+        for cast_member in cast_data:
+            if cast_member['id'] != person_id:  # Avoid adding the person of interest to themselves
+                graph.add_node(cast_member['id'], cast_member['name'])
+                new_nodes.add(cast_member['id'])
+                graph.add_edge(person_id, cast_member['id'])
+
+    # Print nodes and edges for debugging
+    print("Nodes:")
+    for node in graph.nodes:
+        print(f"{node[0]}, {node[1]}")
+    print("\nEdges:")
+    for edge in graph.edges:
+        print(f"{edge[0]}, {edge[1]}")
+
+    graph.write_edges_file()
+    graph.write_nodes_file()
+"""
 if __name__ == "__main__":
     person_id = '2975'
     person_name = 'Laurence Fishburne'
     vote_avg_threshold = 8.0
     credit_limit = 2
     graph = Graph()
-    tmdb_api_utils = TMDBAPIUtils(api_key='your_api_key')
+    tmdb_api_utils = TMDBAPIUtils(api_key='14386f6d2560c16967a0141156e72327')
+    movie_credits = tmdb_api_utils.get_movie_credits_for_person(person_id, vote_avg_threshold)
 
-    movie_credits = tmdb_api_utils.get_movie_credits_for_person(person_id, vote_avg_threshold=vote_avg_threshold)
+    # Manually add Laurence Fishburne to ensure he is the first node
     graph.add_node(person_id, person_name)
 
+    # Building the graph
+    # Iterate through each movie credit
     for movie in movie_credits:
-        movie_id = str(movie['id'])
-        cast_data = tmdb_api_utils.get_movie_cast(movie_id, limit=credit_limit)
+        movie_id = movie['id']  # Get the movie ID
+        # Get the cast data for the movie, limited to the specified number of cast members
+        cast_data = tmdb_api_utils.get_movie_cast(str(movie_id), credit_limit)
 
+        # Iterate through each cast member
         for cast_member in cast_data:
-            cast_member_id = str(cast_member['id'])
-            cast_member_name = cast_member['name']
-            graph.add_node(cast_member_id, cast_member_name)
-            graph.add_edge(person_id, cast_member_id)
+            cast_member_id = cast_member['id']  # Get the cast member ID
 
-    # Optionally, print nodes and edges for debugging
-    graph.print_nodes()
-    graph.print_edges()
+            # Skip adding the node if the cast member ID is the same as the person of interest
+            # or if the cast member ID is already a node in the graph
+            if cast_member_id == person_id or any(node[0] == cast_member_id for node in graph.nodes):
+                continue
 
-    # Writing nodes and edges to CSV files
-    graph.write_nodes_file("nodes.csv")
-    graph.write_edges_file("edges.csv")
+            # Add the cast member as a new node
+            graph.add_node(cast_member_id, cast_member['name'])
+
+            # Add an edge from the person of interest to the cast member
+            # but only if the edge does not already exist in the graph
+            # The check for self-referential edges is not necessary here as we continue earlier if IDs match
+            if not any(
+                    edge == (person_id, cast_member_id) or edge == (cast_member_id, person_id) for edge in graph.edges):
+                graph.add_edge(person_id, cast_member_id)
+
+    # Print nodes and edges for debugging
+    print("Nodes:")
+    for node in graph.nodes:
+        print(f"{node[0]}, {node[1]}")
+    print("\nEdges:")
+    for edge in graph.edges:
+        print(f"{edge[0]}|{edge[1]}")
+
+    graph.write_edges_file()
+    graph.write_nodes_file()
+
+
+
+
+
+
 
