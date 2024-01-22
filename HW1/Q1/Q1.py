@@ -54,7 +54,7 @@ class  TMDBAPIUtils:
 
         # If limit is specified, apply it
         if limit is not None:
-            full_cast_data = [member for member in full_cast_data if member['order'] <= limit]
+            full_cast_data = [member for member in full_cast_data if member['order'] < limit]
 
         # Restructure the data to include specified fields
         cast_data = [
@@ -174,33 +174,41 @@ class Graph:
 # comment the original section out:
 
 if __name__ == "__main__":
-    person_id = '2975'
+    person_id = '2975'  # Laurence Fishburne
     actor_name = 'Laurence Fishburne'
     vote_avg_threshold = 8.0
-    credit_limit = 2
+    credit_limit = 3
+
     tmdb_api_utils = TMDBAPIUtils(api_key='14386f6d2560c16967a0141156e72327')
     graph = Graph()
 
-    exclude_ids = {}
+    # Define movie IDs to exclude
+    exclude_movie_ids = []  # Example movie IDs to exclude
+
     # Add the initial actor
     graph.add_node(person_id, actor_name)
     actors_to_process = set([person_id])
 
     # Perform iterations
-    for _ in range(3):  # Two additional iterations
+    for iteration in range(3):  # Including the initial setup and two additional iterations
         new_actors_to_process = set()
-
+        print(f"\nIteration {iteration}:")
         for actor_id in actors_to_process:
+            print(f"Actor ID {actor_id}")
             movie_credits = tmdb_api_utils.get_movie_credits_for_person(actor_id, vote_avg_threshold)
 
-            for movie in movie_credits:
+            # Filter out the excluded movie IDs
+            filtered_movie_credits = [movie for movie in movie_credits if movie['id'] not in exclude_movie_ids]
+
+            for movie in filtered_movie_credits:
+                print(f"- Movie ID: {movie['id']}, Title: {movie['title']}")
                 movie_id = str(movie['id'])
                 cast_data = tmdb_api_utils.get_movie_cast(movie_id, credit_limit)
 
                 for cast_member in cast_data:
                     cast_member_id = str(cast_member['id'])
-
                     if cast_member_id != actor_id:
+                        print(f"  -- Cast Member ID: {cast_member_id}, Name: {cast_member['name']}")
                         if cast_member_id not in [node[0] for node in graph.nodes]:
                             graph.add_node(cast_member_id, cast_member['name'])
                             new_actors_to_process.add(cast_member_id)
@@ -211,7 +219,7 @@ if __name__ == "__main__":
         actors_to_process = new_actors_to_process
 
     # Print and write final graph
-    print("Final Nodes:")
+    print("\nFinal Nodes:")
     for node in graph.nodes:
         print(f"{node[0]}, {node[1]}")
     print("\nFinal Edges:")
@@ -220,6 +228,13 @@ if __name__ == "__main__":
 
     graph.write_edges_file()
     graph.write_nodes_file()
+
+
+
+
+
+
+
 
 
 
