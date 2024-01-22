@@ -6,7 +6,7 @@ import csv
 #################################################################################
 
 ## Change to False to disable Sample
-SHOW = True
+SHOW = False
 
 ############### SAMPLE CLASS AND SQL QUERY ###########################
 ######################################################################
@@ -61,24 +61,38 @@ class HW2_sql():
 
     # GTusername [0 points]
     def GTusername(self):
-        gt_username = "gburdell3"
+        gt_username = "zhong61/zhong87"
         return gt_username
     
     # Part a.i Create Tables [2 points]
-    def part_ai_1(self,connection):
+    def part_ai_1(self, connection):
         ############### EDIT SQL STATEMENT ###################################
-        part_ai_1_sql = ""
+        part_ai_1_sql = """
+        CREATE TABLE IF NOT EXISTS movies (
+            id INTEGER,
+            title TEXT,
+            score REAL
+        );
+        """
         ######################################################################
-        
+
         return self.execute_query(connection, part_ai_1_sql)
 
-    def part_ai_2(self,connection):
+    def part_ai_2(self, connection):
         ############### EDIT SQL STATEMENT ###################################
-        part_ai_2_sql = ""
+        part_ai_2_sql = """
+        CREATE TABLE IF NOT EXISTS movie_cast (
+            movie_id INTEGER,
+            cast_id INTEGER,
+            cast_name TEXT,
+            birthday TEXT,
+            popularity REAL
+        );
+        """
         ######################################################################
-        
+
         return self.execute_query(connection, part_ai_2_sql)
-    
+
     # Part a.ii Import Data [2 points]
     def part_aii_1(self,connection,path):
         ############### CREATE IMPORT CODE BELOW ############################
