@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Games Rating: 2015 - 2019</title>
+  <meta charset="utf-8">
+  <style>
+    /* Define CSS rules */
+    .line {
+      fill: none;
+      stroke-width: 2px;
+    }
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: black;
+      shape-rendering: crispEdges;
+    }
+    .axis text {
+      font-family: sans-serif;
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Line Chart -->
+  <svg id="line_chart">
+    <g id="container">
+      <g id="lines"></g>
+      <g id="x-axis-lines"></g>
+      <g id="y-axis-lines"></g>
+      <g id="circles"></g>
+      <text id="line_chart_title"></text>
+      <text id="credit"></text>
+      <g id="legend"></g>
+      <text></text>
+      <text></text>
+    </g>
+  </svg>
+
+  <!-- Bar Chart -->
+  <div id="bar_chart_title">
+    <!-- Bar Chart Title -->
+  </div>
+  <svg id="bar_chart">
+    <g id="container_2">
+      <g id="bars"></g>
+      <g id="x-axis-bars"></g>
+      <g id="y-axis-bars"></g>
+      <text id="bar_x_axis_label"></text>
+      <text id="bar_y_axis_label"></text>
+    </g>
+  </svg>
+
+  <!-- D3.js library scripts -->
+  <script type="text/javascript" src="../lib/d3.v5.min.js"></script>
+  <script type="text/javascript" src="../lib/d3-dsv.min.js"></script>
+  <script type="text/javascript" src="../lib/d3-geo-projection.v2.min.js"></script>
+  <script type="text/javascript" src="../lib/d3-legend.min.js"></script>
+  <script type="text/javascript" src="../lib/d3-tip.min.js"></script>
+  <script type="text/javascript" src="../lib/topojson.v2.min.js"></script>
+
+  <!-- Visualization script -->
+  <script>
+    // Set the dimensions and margins for the chart
+    let margin = { top: 50, right: 150, bottom: 50, left: 50 },
+        width = 960 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+    // Set the dimensions and margins for the sub-chart
+    let subChartMargin = { top: 30, right: 30, bottom: 50, left: 60 },
+        subChartWidth = 960 - subChartMargin.left - subChartMargin.right,
+        subChartHeight = 200 - subChartMargin.top - subChartMargin.bottom;
+
+    // Define colors for each year
+    let color = d3.scaleOrdinal()
+                  .domain(["2015", "2016", "2017", "2018", "2019"])
+                  .range(["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00"]);
+
+    // Append the SVG object to the body of the page
+    let svg = d3.select("body").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // Read the data
+d3.csv("average-rating.csv").then(function(data) {
+  // Process and filter data for the years 2015-2019
+  let filteredData = data.filter(d => d.year >= 2015 && d.year <= 2019)
+    .map(d => ({
+      name: d.name,
+      year: +d.year,
+      rating: Math.floor(+d.average_rating),
+      users_rated: +d.users_rated // Keep the number of users that rated the game
+    }));
+
+      // Group data by rating and year, then count occurrences
+      let ratingCounts = d3.nest()
+        .key(d => d.rating)
+        .key(d => d.year)
+        .rollup(leaves => leaves.length)
+        .entries(filteredData);
+
+      // Create a dataset for plotting
+      let plotData = [];
+      ratingCounts.forEach(function(ratingGroup) {
+        let ratingsByYear = {};
+        ratingGroup.values.forEach(function(yearGroup) {
+          ratingsByYear[yearGroup.key] = yearGroup.value;
+        });
+        // Ensure each year has a data point
+        for (let year = 2015; year <= 2019; year++) {
+          plotData.push({
+            rating: +ratingGroup.key,
+            year: year,
+            count: ratingsByYear[year] || 0 // Use dummy value of 0 if no data
+          });
+        }
+      });
+
+      // Sort plot data by year, then by rating
+      plotData.sort((a, b) => (a.year - b.year) || (a.rating - b.rating));
+
+      // Create scales
+      let x = d3.scaleLinear().domain([0, 10]).range([0, width]);
+      let y = d3.scaleLinear().domain([0, d3.max(plotData, d => d.count)]).range([height, 0]);
+
+      // Add X axis
+      svg.append("g").attr("transform", "translate(0," + height + ")").call(d3.axisBottom(x).ticks(10));
+
+      // Add X axis title
+      svg.append("text")
+        .attr("text-anchor", "middle")
+        .attr("transform", "translate(" + (width/2) + "," + (height + margin.bottom - 10) + ")")
+        .text("Rating");
+
+      // Add Y axis
+      svg.append("g").call(d3.axisLeft(y));
+
+      // Add Y axis title
+      svg.append("text")
+        .attr("text-anchor", "middle")
+        .attr("transform", "translate(" + (-margin.left + 20) + "," + (height/2) + ")rotate(-90)")
+        .text("Count");
+
+      // Define the line generator
+      let valueline = d3.line().x(d => x(d.rating)).y(d => y(d.count));
+
+      // Draw the lines and circles for each year
+      for (let year = 2015; year <= 2019; year++) {
+        let dataForYear = plotData.filter(d => d.year === year);
+
+        // Lines
+        svg.append("path").datum(dataForYear).attr("fill", "none").attr("stroke", color(year.toString())).attr("stroke-width", 1.5).attr("d", valueline);
+
+        // Circles
+        svg.selectAll("circle-" + year)
+          .data(dataForYear)
+          .enter()
+          .append("circle")
+          .attr("cx", d => x(d.rating))
+          .attr("cy", d => y(d.count))
+          .attr("r", 4)
+          .attr("fill", color(year.toString()))
+          .on("mouseover", function(d) {
+            // Display sub-chart on mouseover
+            createSubChart(d.year, d.rating, filteredData);
+
+            // Enlarge hovered circle
+            d3.select(this).attr("r", 8);
+          })
+          .on("mouseout", function() {
+            // Restore circle size on mouseout
+            d3.select(this).attr("r", 4);
+          });
+      }
+
+      // Add a legend
+      let legend = svg.selectAll(".legend")
+        .data(color.domain())
+        .enter().append("g")
+          .attr("class", "legend")
+          .attr("transform", (d, i) => "translate(0," + i * 20 + ")");
+
+      legend.append("rect")
+        .attr("x", width + 20)
+        .attr("width", 18)
+        .attr("height", 18)
+        .style("fill", color);
+
+      legend.append("text")
+        .attr("x", width + 40)
+        .attr("y", 9)
+        .attr("dy", ".35em")
+        .style("text-anchor", "start")
+        .text(d => d);
+
+      // Add the title
+      svg.append("text")
+        .attr("x", (width / 2))
+        .attr("y", 0 - (margin.top / 2))
+        .attr("text-anchor", "middle")
+        .style("font-size", "20px")
+        .style("text-decoration", "underline")
+        .text("Board games by Rating 2015-2019");
+
+      // Add the GT username
+      svg.append("text")
+        .attr("x", (width / 2))
+        .attr("y", 0 - (margin.top / 4))
+        .attr("text-anchor", "middle")
+        .style("font-size", "12px")
+        .text("Zhong61/Zhong87");
+
+      // Function to create sub-chart
+      function createSubChart(year, rating, fullData) {
+        // Remove any existing sub-charts
+        d3.select("#subChartSvg").remove();
+
+        // Filter data for the selected year and rating
+        let subChartData = fullData.filter(d => d.year === year && Math.floor(+d.average_rating) === rating);
+
+        // Sort sub-chart data by users_rated in descending order
+        subChartData.sort((a, b) => b.users_rated - a.users_rated);
+
+        // Extract top 5 games data
+        let top5Games = subChartData.slice(0, 5);
+
+        // Create scales for sub-chart
+        let xSubChart = d3.scaleLinear().domain([0, d3.max(top5Games, d => d.users_rated)]).range([0, subChartWidth]);
+        let ySubChart = d3.scaleBand().domain(top5Games.map(d => d.name.slice(0, 10))).range([0, subChartHeight]).padding(0.1);
+
+        // Append SVG for sub-chart
+        let subChartSvg = d3.select("body").append("svg")
+            .attr("id", "subChartSvg")
+            .attr("width", subChartWidth + subChartMargin.left + subChartMargin.right)
+            .attr("height", subChartHeight + subChartMargin.top + subChartMargin.bottom)
+          .append("g")
+            .attr("transform", "translate(" + subChartMargin.left + "," + subChartMargin.top + ")");
+
+        // Add X axis for sub-chart
+        subChartSvg.append("g").attr("transform", "translate(0," + subChartHeight + ")").call(d3.axisBottom(xSubChart));
+
+        // Add X axis title for sub-chart
+        subChartSvg.append("text")
+          .attr("text-anchor", "middle")
+          .attr("transform", "translate(" + (subChartWidth/2) + "," + (subChartHeight + subChartMargin.bottom - 10) + ")")
+          .text("Number of users");
+
+        // Add Y axis for sub-chart
+        subChartSvg.append("g").call(d3.axisLeft(ySubChart));
+
+        // Add Y axis title for sub-chart
+        subChartSvg.append("text")
+          .attr("text-anchor", "middle")
+          .attr("transform", "translate(" + (-subChartMargin.left + 20) + "," + (subChartHeight/2) + ")rotate(-90)")
+          .text("Games");
+
+        // Add bars to sub-chart
+        subChartSvg.selectAll(".bar")
+          .data(top5Games)
+          .enter().append("rect")
+            .attr("class", "bar")
+            .attr("x", 0)
+            .attr("y", d => ySubChart(d.name.slice(0, 10)))
+            .attr("width", d => xSubChart(d.users_rated))
+            .attr("height", ySubChart.bandwidth())
+            .style("fill", "#6a0dad"); // You can change bar color here
+
+        // Add title for sub-chart
+        subChartSvg.append("text")
+          .attr("x", (subChartWidth / 2))
+          .attr("y", 0 - (subChartMargin.top / 2))
+          .attr("text-anchor", "middle")
+          .style("font-size", "16px")
+          .text("Top 5 Most Rated Games of " + year + " with Rating " + rating);
+      }
+    });
+  </script>
+</body>
+</html>
