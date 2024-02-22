@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+
+<head>
+  <title>Line Charts</title>
+  <meta charset="utf-8">
+
+  <style type="text/css">
+  
+  /* style the lines by removing the fill and applying a stroke  */
+  /* d3.schemeCategory10 = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'] */
+
+    path.line-0 { /* Catan */
+    fill: none;
+    stroke: #1f77b4;
+    stroke-width: 3;
+    }
+
+    .line-0 {
+    fill: #1f77b4;   
+    }
+
+    path.line-1 { /* Dominion */
+    fill: none;
+    stroke: #ff7f0e;
+    stroke-width: 3;
+    }
+
+    .line-1 {
+    fill: #ff7f0e;   
+    }
+
+    path.line-2 { /* Codenames */
+    fill: none;
+    stroke: #2ca02c;
+    stroke-width: 3;
+    }
+
+    .line-2 {
+    fill: #2ca02c;   
+    }
+
+    path.line-3 { /* Terraforming Mars */
+    fill: none;
+    stroke: #d62728;
+    stroke-width: 3;
+    }
+
+    .line-3 {
+    fill: #d62728;   
+    }
+
+    path.line-4 { /* Gloomhaven */
+    fill: none;
+    stroke: #9467bd;
+    stroke-width: 3;
+    }
+
+    .line-4 {
+    fill: #9467bd;   
+    }
+
+    path.line-5 { /* Magic: The Gathering */
+    fill: none;
+    stroke: #8c564b;
+    stroke-width: 3;
+    }
+
+    .line-5 {
+    fill: #8c564b;   
+    }
+
+    path.line-6 { /* Dixit */
+    fill: none;
+    stroke: #e377c2;
+    stroke-width: 3;
+    }
+
+    .line-6 {
+    fill: #e377c2;   
+    }
+
+    path.line-7 { /* Monopoly */
+    fill: none;
+    stroke: #7f7f7f;
+    stroke-width: 3;
+    }
+
+    .line-7 {
+    fill: #7f7f7f;   
+    }
+
+    .circle_text{
+    fill: white;
+    font-size: 10px;
+
+  </style>
+
+  <script type="text/javascript" src="../lib/d3.v5.min.js"></script>
+  <script type="text/javascript" src="../lib/d3-dsv.min.js"></script>
+  
+</head>
+
+<body>
+
+  <script>
+    var margin = 70;
+    var width = 1000;
+    var height = 450;
+    
+    // Read csv data
+    d3.dsv(",", "boardgame_ratings.csv", function(d){
+    var vals = Object.values(d);
+    return {
+      date: new Date(vals[0]),
+      col1: +vals[1],  col2: +vals[2],
+      col3: +vals[3],  col4: +vals[4],
+      col5: +vals[5],  col6: +vals[6],
+      col7: +vals[7],  col8: +vals[8],
+      col9: +vals[9],  col10: +vals[10],
+      col11: +vals[11], col12: +vals[12],
+      col13: +vals[13], col14: +vals[14],
+      col15: +vals[15], col16: +vals[16]
+    }
+  }).then(function(data){
+    //console.log(data);
+
+    //Create Line Chart part A
+    var svg = d3.select("body").append("svg").attr("width",width + margin * 3).attr("height",height + margin * 2).attr("id","svg-a");
+    svg.append("text").attr("x",width / 2 - margin).attr("y",margin / 2).style("font-size","25px").text("Number of Ratings 2016-2020").attr("id","title-a");
+    
+    
+    var date_min = d3.min(data, function(d) { return d.date;});
+    var date_max = d3.max(data, function(d) { return d.date;});
+    var cnt_min = 0;
+    var cnt_max = d3.max(data, function(d) { return d.col1;});
+    var rnk_min = 0;
+    var rnk_max = d3.min(data, function(d) { return d.col16;});
+    
+    // Create Line Chart
+    Line_Chart_Part_A = svg.append("g").attr("id","plot-a").attr("transform","translate(" + margin + "," + margin + ")");
+
+
+    // Determine the scale and label of x and y axis
+    var x_scale = d3.scaleTime().domain([date_min,date_max]).range([0, width]);
+    var x_axis = d3.axisBottom(x_scale).ticks(15).tickFormat(d3.timeFormat("%b %y"));
+    var x_axis_a = Line_Chart_Part_A.append("g").attr("id","x-axis-a").attr("transform","translate(0," + height + ")").call(x_axis);
+    x_axis_a.append("text").attr("class","x_axis_label").attr("x", width / 2 + 30).attr("y", 50).attr("text-anchor","end")
+            .style("font-size","16px").style("stroke-width",3).style("fill","black").text("Month");
+
+    var y_scale = d3.scaleLinear().domain([0, cnt_max]).range([height, 0]);
+    var y_axis = d3.axisLeft(y_scale).ticks(9);
+    y_axis_a = Line_Chart_Part_A.append("g").attr("id", "y-axis-a").call(y_axis)
+    y_axis_a.append("text").attr("class","y_axis_label").attr("x", - margin * 2).attr("y", - 50).attr("text-anchor","end")
+            .style("font-size","16px").style("stroke-width",3).style("fill","black").attr("transform","rotate(-90)").text("Num of Ratings");
+    
+    // Create Line Chart
+    var line = d3.line().x(function(d) { return x_scale(d.date); }).y(function(d) { return y_scale(d.count); })
+    var line_data = [];
+    
+    // Create data array for Line Chart
+    for (var j = 1; j < 17; j++){
+      var col_name = "col" + j
+      for (var i = 0; i < data.length; i++){
+          line_data.push({date: data[i].date, count: data[i][col_name]});
+        }
+      }
+    
+    console.log(line_data)
+    //console.log(line_data.slice(0, 46))
+    //console.log(line_data[45].count)
+
+    // Line labels and values
+    line_labels = ['Catan', 'Dominion', 'Codenames', 'Terraforming Mars','Gloomhaven', 'Magic: The Gathering', 'Dixit', 'Monopoly'];
+    var lines_A = Line_Chart_Part_A.append("g").attr("id", "lines-a")
+    for (var i = 0; i < line_labels.length * 2; i=i+2){
+      lines_A.append("path").datum(line_data.slice(i*46, (i+1)*46)).attr("class", "line-"+ i/2).attr("d", line);
+      lines_A.append("text").attr("class", "line-" + i/2).attr("transform", "translate("+ (width)+ "," + y_scale(line_data[(i+1)*46-1].count) + ")").attr("text-anchor", "start")
+             .style("font-size","15px").style("stroke-width",2).text(line_labels[i/2]);
+    }
+
+    //Create Line Chart part B
+    var svg_b = d3.select("body").append("svg").attr("width",width + margin * 3).attr("height",height + margin * 2).attr("id", "svg-b");
+    svg_b.append("text").attr("x",width / 2 - margin * 2).attr("y",margin / 2).style("font-size","25px").text("Number of Ratings 2016-2020 with Rankings").attr("id", "title-b");
+    Line_Chart_Part_B = svg_b.append("g").attr("id", "plot-b").attr("transform", "translate(" + margin + "," + margin + ")");
+    
+    //Copy from part A for x and y axis and lable creation
+    var x_axis_b = Line_Chart_Part_B.append("g").attr("id", "x-axis-b").attr("transform","translate(0," + height + ")").call(x_axis);
+    x_axis_b.append("text").attr("class","x_axis_label").attr("x", width / 2 + 30).attr("y", 50).attr("text-anchor","end")
+            .style("font-size","16px").style("stroke-width",3).style("fill","black").text("Month");
+
+    var y_axis_b = Line_Chart_Part_B.append("g").attr("id", "y-axis-b").call(y_axis);
+    y_axis_b.append("text").attr("class","y_axis_label").attr("x", - margin * 2).attr("y", - 50).attr("text-anchor","end")
+            .style("font-size","16px").style("stroke-width",3).style("fill","black").attr("transform","rotate(-90)").text("Num of Ratings");
+
+
+
+    //Copy from part A for Line Chart creation
+    var lines_B = Line_Chart_Part_B.append("g").attr("id", "lines-b");
+    for (var i = 0; i < line_labels.length * 2; i=i+2){
+      lines_B.append("path").datum(line_data.slice(i*46, (i+1)*46)).attr("class", "line-"+ i/2).attr("d", line);
+      lines_B.append("text").attr("class", "line-" + i/2).attr("transform", "translate("+ (width)+ "," + y_scale(line_data[(i+1)*46-1].count) + ")").attr("text-anchor", "start")
+             .style("font-size","15px").style("stroke-width",2).text(line_labels[i/2]);
+    }
+
+    // "Dominion to be skipped"
+    var label_b = ['Catan', 'Dominion', 'Codenames', 'Terraforming Mars', 'Gloomhaven'];
+
+    // Create the circle and fill with ranking
+    var symbols_b = Line_Chart_Part_B.append("g").attr("id", "symbols-b");
+    var legend_b = svg_b.append("g").attr("legend-b");
+    for (var i = 0; i < label_b.length * 2; i = i + 2){
+      if (i === 2) { continue; }
+      for (var j = 2; j < 46; j = j + 3){
+        symbols_b.append("circle").attr("cx", x_scale(line_data[i*46+j].date)).attr("cy", y_scale(line_data[i*46+j].count)).attr("r", 12).attr("class", "line-"+ i/2);
+        symbols_b.append("text").attr("x", x_scale(line_data[i*46+j].date)).attr("y", y_scale(line_data[i*46+j].count)).attr("text-anchor", "middle").attr("class", "circle_text").text(line_data[(i+1)*46+j].count);
+      }
+    }
+
+
+    //Create Line Chart part C-1
+    var svg_c1 = d3.select("body").append("svg").attr("width",width + margin * 3).attr("height",height + margin * 2).attr("id", "svg-c-1");
+    svg_c1.append("text").attr("x",width / 2 - margin * 2).attr("y",margin / 2).style("font-size","25px").text("Number of Ratings 2016-2020 (Square root Scale)").attr("id", "title-c-1");
+    Line_Chart_Part_C1 = svg_c1.append("g").attr("id", "plot-c-1").attr("transform", "translate(" + margin + "," + margin + ")");
+    
+    //Copy from part B for x and y axis and lable creation
+    var x_axis_c1 = Line_Chart_Part_C1.append("g").attr("id", "x-axis-c-1").attr("transform","translate(0," + height + ")").call(x_axis);
+    x_axis_c1.append("text").attr("class","x_axis_label").attr("x", width / 2 + 30).attr("y", 50).attr("text-anchor","end")
+            .style("font-size","16px").style("stroke-width",3).style("fill","black").text("Month");
+    
+    // Y axis use sqrt scale
+    var y_scale_c1 = d3.scaleSqrt().domain([0, cnt_max]).range([height, 0]);
+    var y_axis_c1 = d3.axisLeft(y_scale_c1).ticks(9);
+    y_axis_c1 = Line_Chart_Part_C1.append("g").attr("id", "y-axis-c-1").call(y_axis_c1);
+    y_axis_c1.append("text").attr("class","y_axis_label").attr("x", - margin * 2).attr("y", - 50).attr("text-anchor","end")
+            .style("font-size","16px").style("stroke-width",3).style("fill","black").attr("transform","rotate(-90)").text("Num of Ratings");
+
+    // Create Line Chart using new Y sqrt scale 
+    var lines_C1 = Line_Chart_Part_C1.append("g").attr("id", "lines-c-1");
+    var line_c1 = d3.line().x(function(d) { return x_scale(d.date); }).y(function(d) { return y_scale_c1(d.count); })
+    for (var i = 0; i < line_labels.length * 2; i=i+2){
+      lines_C1.append("path").datum(line_data.slice(i*46, (i+1)*46)).attr("class", "line-"+ i/2).attr("d", line_c1);
+      lines_C1.append("text").attr("class", "line-" + i/2).attr("transform", "translate("+ (width)+ "," + y_scale_c1(line_data[(i+1)*46-1].count) + ")").attr("text-anchor", "start")
+             .style("font-size","15px").style("stroke-width",2).text(line_labels[i/2]);
+    }
+
+    // "Dominion to be skipped"
+    var label_c1 = ['Catan', 'Dominion', 'Codenames', 'Terraforming Mars', 'Gloomhaven'];
+
+    // Create the circle and fill with ranking
+    var symbols_c1 = Line_Chart_Part_C1.append("g").attr("id", "symbols-c-1");
+    var legend_c1 = svg_c1.append("g").attr("legend-c-1");
+    for (var i = 0; i < label_c1.length * 2; i = i + 2){
+      if (i === 2) { continue; }
+      for (var j = 2; j < 46; j = j + 3){
+        symbols_c1.append("circle").attr("cx", x_scale(line_data[i*46+j].date)).attr("cy", y_scale_c1(line_data[i*46+j].count)).attr("r", 12).attr("class", "line-"+ i/2);
+        symbols_c1.append("text").attr("x", x_scale(line_data[i*46+j].date)).attr("y", y_scale_c1(line_data[i*46+j].count)).attr("text-anchor", "middle").attr("class", "circle_text").text(line_data[(i+1)*46+j].count);
+      }
+    }
+
+    //Create Line Chart part C-2
+    var svg_c2 = d3.select("body").append("svg").attr("width",width + margin * 3).attr("height",height + margin * 2).attr("id", "svg-c-2");
+    svg_c2.append("text").attr("x",width / 2 - margin * 2).attr("y",margin / 2).style("font-size","25px").text("Number of Ratings 2016-2020 (Log Scale)").attr("id", "title-c-2");
+    Line_Chart_Part_C2 = svg_c2.append("g").attr("id", "plot-c-2").attr("transform", "translate(" + margin + "," + margin + ")");
+    
+    //Copy from part B for x and y axis and lable creation
+    var x_axis_c2 = Line_Chart_Part_C2.append("g").attr("id", "x-axis-c-2").attr("transform","translate(0," + height + ")").call(x_axis);
+    x_axis_c2.append("text").attr("class","x_axis_label").attr("x", width / 2 + 30).attr("y", 50).attr("text-anchor","end")
+            .style("font-size","16px").style("stroke-width",3).style("fill","black").text("Month");
+    
+    // Y axis use sqrt scale
+    var y_scale_c2 = d3.scaleLog().domain([1, cnt_max]).range([height, 1]);
+    var y_axis_c2 = d3.axisLeft(y_scale_c2).ticks(9);
+    y_axis_c2 = Line_Chart_Part_C2.append("g").attr("id", "y-axis-c-2").call(y_axis_c2);
+    y_axis_c2.append("text").attr("class","y_axis_label").attr("x", - margin * 2).attr("y", - 50).attr("text-anchor","end")
+            .style("font-size","16px").style("stroke-width",3).style("fill","black").attr("transform","rotate(-90)").text("Num of Ratings");
+
+    // Create Line Chart using new Y sqrt scale 
+    var lines_C2 = Line_Chart_Part_C2.append("g").attr("id", "lines-c-2");
+    var line_c2 = d3.line().x(function(d) { return x_scale(d.date); }).y(function(d) { return y_scale_c2(d.count); })
+    for (var i = 0; i < line_labels.length * 2; i=i+2){
+      lines_C2.append("path").datum(line_data.slice(i*46, (i+1)*46)).attr("class", "line-"+ i/2).attr("d", line_c2);
+      lines_C2.append("text").attr("class", "line-" + i/2).attr("transform", "translate("+ (width)+ "," + y_scale_c2(line_data[(i+1)*46-1].count) + ")").attr("text-anchor", "start")
+             .style("font-size","15px").style("stroke-width",2).text(line_labels[i/2]);
+    }
+
+    // "Dominion to be skipped"
+    var label_c2 = ['Catan', 'Dominion', 'Codenames', 'Terraforming Mars', 'Gloomhaven'];
+
+    // Create the circle and fill with ranking
+    var symbols_c2 = Line_Chart_Part_C2.append("g").attr("id", "symbols-c-2");
+    var legend_c2 = svg_c2.append("g").attr("legend-c-2");
+    for (var i = 0; i < label_c2.length * 2; i = i + 2){
+      if (i === 2) { continue; }
+      for (var j = 2; j < 46; j = j + 3){
+        symbols_c2.append("circle").attr("cx", x_scale(line_data[i*46+j].date)).attr("cy", y_scale_c2(line_data[i*46+j].count)).attr("r", 12).attr("class", "line-"+ i/2);
+        symbols_c2.append("text").attr("x", x_scale(line_data[i*46+j].date)).attr("y", y_scale_c2(line_data[i*46+j].count)).attr("text-anchor", "middle").attr("class", "circle_text").text(line_data[(i+1)*46+j].count);
+      }
+    }
+});
+
+  //zzz = d3.schemeCategory10
+  //console.log(zzz)
+  </script> 
+
+  <div id='signature'>ycao42</div>
+
+</body>
